@@ -24,7 +24,7 @@ DMLtest.methrix <- function(meth, group1, group2, equal.disp=FALSE, smoothing=FA
         stop("ncores exceeds the number of CPU cores on the system.")
 
     ## grab two group data
-    tmp <- DSS:::getBSseqIndex(colnames(meth), group1, group2)
+    tmp <- getBSseqIndex(colnames(meth), group1, group2)
     ## sampleNames don't work on methrix. It should be either colnames, or we should implement this function.
     meth1 <- meth[,tmp$group1]
     meth2 <- meth[,tmp$group2]
@@ -38,8 +38,8 @@ DMLtest.methrix <- function(meth, group1, group2, equal.disp=FALSE, smoothing=FA
     n2[is.na(n2)] <- 0
     ## remove if a rather long strech (like 200 bps) of regions have no coverage
     allpos <- meth@elementMetadata$start
-    ix1 <- DSS:::hasCoverage(n1, allpos)
-    ix2 <- DSS:::hasCoverage(n2, allpos)
+    ix1 <- hasCoverage(n1, allpos)
+    ix2 <- hasCoverage(n2, allpos)
     ix <- ix1 & ix2
     meth1 <- meth1[ix]
     meth2 <- meth2[ix]
@@ -85,8 +85,8 @@ DMLtest.noSmoothMethrix <- function(meth1, meth2, equal.disp, ncores) {
     nreps2 <- ncol(x2)
 
     ## estimate means
-    estprob1 <- DSS:::compute.mean.noSmooth(x1, n1)
-    estprob2 <- DSS:::compute.mean.noSmooth(x2, n2)
+    estprob1 <- compute.mean.noSmooth(x1, n1)
+    estprob2 <- compute.mean.noSmooth(x2, n2)
 
     ## estimate dispersion
     ## - this part is slow. Could be computed parallely. Will implement later.
@@ -95,8 +95,8 @@ DMLtest.noSmoothMethrix <- function(meth1, meth2, equal.disp, ncores) {
         phi1 <- phi2 <- est.dispersion.BSseq(cbind(x1,x2), cbind(n1,n2),
                                              cbind(estprob1, estprob2), ncores)
     } else {
-        phi1 <- DSS:::est.dispersion.BSseq(x1, n1, estprob1, ncores)
-        phi2 <- DSS:::est.dispersion.BSseq(x2, n2, estprob2, ncores)
+        phi1 <- est.dispersion.BSseq(x1, n1, estprob1, ncores)
+        phi2 <- est.dispersion.BSseq(x2, n2, estprob2, ncores)
     }
 
 
@@ -109,13 +109,13 @@ DMLtest.noSmoothMethrix <- function(meth1, meth2, equal.disp, ncores) {
     n2.wt <- n2*wt2
 
     ## re-estimate means
-    estprob1 <- DSS:::compute.mean.noSmooth(x1.wt, n1.wt)
-    estprob2 <- DSS:::compute.mean.noSmooth(x2.wt, n2.wt)
+    estprob1 <- compute.mean.noSmooth(x1.wt, n1.wt)
+    estprob2 <- compute.mean.noSmooth(x2.wt, n2.wt)
 
     ## perform Wald test
     allchr <- as.character(meth1@elementMetadata$chr)
     allpos <- meth1@elementMetadata$start
-    wald <- DSS:::waldTest.DML(x1.wt, n1.wt, estprob1, phi1, x2.wt, n2.wt, estprob2, phi2,
+    wald <- waldTest.DML(x1.wt, n1.wt, estprob1, phi1, x2.wt, n2.wt, estprob2, phi2,
                          smoothing=FALSE, allchr=allchr, allpos=allpos)
 
     return(wald)
@@ -149,16 +149,16 @@ DMLtest.SmoothMethrix <- function(meth1, meth2, equal.disp, smoothing.span, ncor
 
     ## Smoothing
     cat("Smoothing ...\n")
-    estprob1 <- DSS:::compute.mean.Smooth(x1, n1, allchr, allpos, smoothing.span)
-    estprob2 <- DSS:::compute.mean.Smooth(x2, n2, allchr, allpos, smoothing.span)
+    estprob1 <- compute.mean.Smooth(x1, n1, allchr, allpos, smoothing.span)
+    estprob2 <- compute.mean.Smooth(x2, n2, allchr, allpos, smoothing.span)
 
     ## estimate priors from counts
     cat("Estimating dispersion for each CpG site, this will take a while ...\n")
     if(equal.disp) {
-        phi1 <- phi2 <- DSS:::est.dispersion.BSseq(cbind(x1,x2), cbind(n1,n2), cbind(estprob1, estprob2), ncores)
+        phi1 <- phi2 <- est.dispersion.BSseq(cbind(x1,x2), cbind(n1,n2), cbind(estprob1, estprob2), ncores)
     } else {
-        phi1 <- DSS:::est.dispersion.BSseq(x1, n1, estprob1, ncores)
-        phi2 <- DSS:::est.dispersion.BSseq(x2, n2, estprob2, ncores)
+        phi1 <- est.dispersion.BSseq(x1, n1, estprob1, ncores)
+        phi2 <- est.dispersion.BSseq(x2, n2, estprob2, ncores)
     }
 
     ## update counts - weight by dispersion
@@ -170,11 +170,11 @@ DMLtest.SmoothMethrix <- function(meth1, meth2, equal.disp, smoothing.span, ncor
     n2.wt <- n2*wt2
 
     ## re-estimate means
-    estprob1 <- DSS:::compute.mean.Smooth(x1.wt, n1.wt, allchr, allpos, smoothing.span)
-    estprob2 <- DSS:::compute.mean.Smooth(x2.wt, n2.wt, allchr, allpos, smoothing.span)
+    estprob1 <- compute.mean.Smooth(x1.wt, n1.wt, allchr, allpos, smoothing.span)
+    estprob2 <- compute.mean.Smooth(x2.wt, n2.wt, allchr, allpos, smoothing.span)
 
     cat("Computing test statistics ...\n")
-    wald <- DSS:::waldTest.DML(x1.wt, n1.wt, estprob1, phi1, x2.wt, n2.wt, estprob2, phi2,
+    wald <- waldTest.DML(x1.wt, n1.wt, estprob1, phi1, x2.wt, n2.wt, estprob2, phi2,
                          smoothing=TRUE, smoothing.span, allchr=allchr, allpos=allpos)
 ##     wald <- waldTest.DML(x1, n1, estprob1, phi1, x2, n2, estprob2, phi2,
 ##                          smoothing=TRUE, smoothing.span, allchr=allchr, allpos=allpos)
